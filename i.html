@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>My Image Gallery</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    color: #222;
+}
+
+header {
+    background: #111827;
+    color: white;
+    text-align: center;
+    padding: 25px 15px;
+}
+
+header h1 {
+    margin: 0 0 8px;
+}
+
+header p {
+    margin: 0;
+    opacity: 0.8;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+}
+
+#status {
+    text-align: center;
+    margin: 10px 0 20px;
+    font-weight: bold;
+}
+
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+}
+
+.card img {
+    width: 100%;
+    height: 220px;
+    object-fit: contain;
+    background: #eee;
+    border-radius: 8px;
+    display: block;
+}
+
+.filename {
+    margin: 10px 0;
+    font-size: 14px;
+    font-weight: bold;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.buttons a {
+    flex: 1;
+    padding: 10px;
+    border-radius: 7px;
+    text-align: center;
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+}
+
+.view {
+    background: #2563eb;
+}
+
+.download {
+    background: #16a34a;
+}
+
+.error {
+    color: #dc2626;
+}
+
+@media (max-width: 500px) {
+    .gallery {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .card {
+        padding: 8px;
+    }
+
+    .card img {
+        height: 160px;
+    }
+
+    .buttons {
+        flex-direction: column;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🖼️ My Image Gallery</h1>
+    <p>Images from GitHub</p>
+</header>
+
+<div class="container">
+
+    <div id="status">
+        Loading images...
+    </div>
+
+    <div id="gallery" class="gallery"></div>
+
+</div>
+
+<script>
+
+// ==========================================
+// GITHUB SETTINGS
+// ==========================================
+
+const GITHUB_USER = "YOUR_GITHUB_USERNAME";
+
+const GITHUB_REPO = "YOUR_REPOSITORY_NAME";
+
+const GITHUB_BRANCH = "main";
+
+const IMAGE_FOLDER = "images";
+
+// ==========================================
+// DO NOT EDIT BELOW
+// ==========================================
+
+const API_URL =
+    `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${IMAGE_FOLDER}?ref=${GITHUB_BRANCH}`;
+
+const gallery = document.getElementById("gallery");
+const status = document.getElementById("status");
+
+const imageExtensions = [
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".webp",
+    ".bmp",
+    ".svg"
+];
+
+async function loadImages() {
+
+    try {
+
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+            throw new Error("GitHub folder not found");
+        }
+
+        const files = await response.json();
+
+        gallery.innerHTML = "";
+
+        let count = 0;
+
+        files.forEach(file => {
+
+            if (file.type !== "file") {
+                return;
+            }
+
+            const name = file.name.toLowerCase();
+
+            const isImage = imageExtensions.some(ext =>
+                name.endsWith(ext)
+            );
+
+            if (!isImage) {
+                return;
+            }
+
+            count++;
+
+            // GitHub raw image URL
+            const imageURL =
+                `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${IMAGE_FOLDER}/${encodeURIComponent(file.name)}`;
+
+            const card = document.createElement("div");
+            card.className = "card";
+
+            card.innerHTML = `
+
+                <img
+                    src="${imageURL}"
+                    alt="${file.name}"
+                    loading="lazy"
+                >
+
+                <div class="filename">
+                    ${file.name}
+                </div>
+
+                <div class="buttons">
+
+                    <a
+                        class="view"
+                        href="${imageURL}"
+                        target="_blank"
+                    >
+                        👁️ View
+                    </a>
+
+                    <a
+                        class="download"
+                        href="${imageURL}"
+                        download="${file.name}"
+                    >
+                        ⬇️ Download
+                    </a>
+
+                </div>
+
+            `;
+
+            gallery.appendChild(card);
+
+        });
+
+        if (count === 0) {
+
+            status.textContent =
+                "No images found in GitHub.";
+
+        } else {
+
+            status.textContent =
+                "Total Images: " + count;
+
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.innerHTML =
+            `<span class="error">
+                ❌ Images load nahi ho rahi hain.
+                GitHub username, repository aur folder check karein.
+            </span>`;
+
+    }
+
+}
+
+loadImages();
+
+</script>
+
+</body>
+</html>
